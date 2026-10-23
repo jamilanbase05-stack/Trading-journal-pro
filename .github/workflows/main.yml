@@ -11,10 +11,14 @@ jobs:
       - name: Prepare web folder
         run: |
           mkdir -p www
-          for f in index.html manifest.json sw.js icon-192.png icon-512.png; do
-            if [ -f "$f" ]; then cp "$f" www/; fi
-          done
-          ls -la www
+          if [ -f index.html ]; then
+            cp index.html www/index.html
+          else
+            h=$(find . -path ./www -prune -o -name "*.html" -print | head -n 1)
+            if [ -n "$h" ]; then cp "$h" www/index.html; fi
+          fi
+          echo "--- repository files ---"
+          find . -not -path './.git/*' -not -path './www' -type f | head -50
           test -f www/index.html
       - uses: actions/setup-node@v4
         with:
@@ -23,9 +27,13 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - run: npm install
-      - run: npx cap add android
-      - run: npx cap sync android
+      - name: Create Capacitor project
+        run: |
+          [ -f package.json ] || npm init -y
+          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+          [ -f capacitor.config.json ] || npx cap init "Trading Journal" com.tradingjournal.app --web-dir www
+          npx cap add android
+          npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
