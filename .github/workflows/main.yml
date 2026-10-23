@@ -8,6 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare web folder
+        run: |
+          mkdir -p www
+          for f in index.html manifest.json sw.js icon-192.png icon-512.png; do
+            if [ -f "$f" ]; then cp "$f" www/; fi
+          done
+          ls -la www
+          test -f www/index.html
       - uses: actions/setup-node@v4
         with:
           node-version: 20
